@@ -1,0 +1,33 @@
+# Xcode
+DerivedData/
+build/
+*.xcuserdata
+*.xcuserdatad
+*.xccheckout
+*.xcscmblueprint
+*.xcodeproj/project.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings
+
+# SwiftPM
+.build/
+.swiftpm/
+
+# macOS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Resource noise
+**/Resources/images/*.docx
+**/Resources/images/Thumbs.db
+
+# Fastlane (если есть)
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+
+# CocoaPods (опционально)
+Pods/
