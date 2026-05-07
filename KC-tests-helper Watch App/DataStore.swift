@@ -12,6 +12,7 @@ import Combine
 final class DataStore: ObservableObject {
     @Published var allItems: [QAItem] = []
     @Published var query: String = ""
+    @Published var onlyImage: Bool = false
 
     func load() {
         guard let url = Bundle.main.url(forResource: "qa", withExtension: "json") else {
@@ -28,12 +29,21 @@ final class DataStore: ObservableObject {
 
     var results: [QAItem] {
         let q = normalize(query)
-        if q.isEmpty { return [] }
         let tokens = q.split(whereSeparator: \.isWhitespace).map(String.init)
-
         return allItems.filter { item in
-            let hay = normalize(item.question + " " + item.answers.map(\.text).joined(separator: " "))
-            return tokens.allSatisfy { hay.contains($0) }
+            let matchesQuery: Bool
+            if q.isEmpty {
+                matchesQuery = true
+            } else {
+                let hay = normalize(
+                    item.question + " " +
+                    item.answers.map(\.text).joined(separator: " ")
+                )
+                matchesQuery = tokens.allSatisfy { hay.contains($0) }
+            }
+
+            let matchesImages = !onlyImage || !item.images.isEmpty
+            return matchesQuery && matchesImages
         }
     }
 

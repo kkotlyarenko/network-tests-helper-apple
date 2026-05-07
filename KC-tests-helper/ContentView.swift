@@ -42,6 +42,11 @@ struct ContentView: View {
                         Capsule()
                             .strokeBorder(.quaternary, lineWidth: 0.5)
                     )
+                    
+                    HStack {
+                        Toggle("Только с картинкой", isOn: $store.onlyImage)
+                            .toggleStyle(.switch)
+                    }
 
                     HStack {
                         Label {

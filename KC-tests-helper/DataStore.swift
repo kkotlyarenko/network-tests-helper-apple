@@ -11,24 +11,33 @@ import Combine
 @MainActor
 final class DataStore: ObservableObject {
     @Published var allItems: [QAItem] = []
+    @Published var onlyImage: Bool = false
     @Published var query: String = ""
     @Published private(set) var results: [QAItem] = []
 
     private var cancellables = Set<AnyCancellable>()
 
     init() {
-        $query
-            .combineLatest($allItems)
+        Publishers.CombineLatest3($query, $allItems, $onlyImage)
             .debounce(for: .milliseconds(500), scheduler: RunLoop.main)
-            .map { [weak self] query, items in
+            .map { [weak self] query, items, onlyImage in
                 guard let self = self else { return [] }
                 let q = self.normalize(query)
-                if q.isEmpty { return items }
                 let tokens = q.split(whereSeparator: \.isWhitespace).map(String.init)
-
                 return items.filter { item in
-                    let hay = self.normalize(item.question + " " + item.answers.map(\.text).joined(separator: " "))
-                    return tokens.allSatisfy { hay.contains($0) }
+                    let matchesQuery: Bool
+                    if q.isEmpty {
+                        matchesQuery = true
+                    } else {
+                        let hay = self.normalize(
+                            item.question + " " +
+                            item.answers.map(\.text).joined(separator: " ")
+                        )
+                        matchesQuery = tokens.allSatisfy { hay.contains($0) }
+                    }
+
+                    let matchesImages = !onlyImage || !item.images.isEmpty
+                    return matchesQuery && matchesImages
                 }
             }
             .assign(to: &$results)

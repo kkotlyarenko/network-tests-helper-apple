@@ -10,64 +10,127 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var store = DataStore()
 
+    private var trimmedQuery: String {
+        store.query.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var hasQuery: Bool {
+        !trimmedQuery.isEmpty
+    }
+
     var body: some View {
         NavigationStack {
-            VStack(spacing: 12) {
-                HStack(spacing: 8) {
-                    TextField("Поиск…", text: $store.query)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled(true)
-                        .font(.body)
+            ScrollView {
+                VStack(spacing: 8) {
+                    headerView
 
-                    if !store.query.isEmpty {
-                        Button {
-                            store.query = ""
-                        } label: {
-                            Image(systemName: "xmark.circle.fill")
-                                .font(.title3)
-                                .foregroundStyle(.secondary)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(.horizontal, 4)
-
-                if store.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    VStack(spacing: 8) {
-                        Image(systemName: "magnifyingglass")
-                            .font(.largeTitle)
-                            .foregroundStyle(.secondary)
-
-                        Text("Введите слово для поиска")
-                            .font(.callout)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                    }
-                    .frame(maxHeight: .infinity)
-                } else {
-                    List(store.results) { item in
-                        NavigationLink {
-                            DetailView(item: item)
-                        } label: {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(item.question)
-                                    .font(.callout)
-                                    .lineLimit(3)
-                                    .fixedSize(horizontal: false, vertical: true)
-
-                                Text("\(item.answers.filter(\.is_correct).count) правильных из \(item.answers.count)")
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
+                    if hasQuery {
+                        if store.results.isEmpty {
+                            emptyResultsView
+                        } else {
+                            LazyVStack(spacing: 8) {
+                                ForEach(store.results) { item in
+                                    NavigationLink {
+                                        DetailView(item: item)
+                                    } label: {
+                                        resultRow(item: item)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
                             }
-                            .padding(.vertical, 4)
                         }
+                    } else {
+                        emptySearchView
                     }
-                    .listStyle(.plain)
                 }
+                .padding(.horizontal, 2)
             }
-            .navigationTitle("Вопросы")
         }
         .onAppear {store.load()}
+    }
+
+    private var headerView: some View {
+        VStack(spacing: 4) {
+            HStack(spacing: 4) {
+                TextField("Поиск…", text: $store.query)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled(true)
+                    .font(.body)
+
+                if !store.query.isEmpty {
+                    Button {
+                        store.query = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.title3)
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
+            Toggle("Только с фото", isOn: $store.onlyImage)
+                .font(.caption)
+                .padding(.horizontal, 4)
+
+            Text("\(store.results.count) из \(store.allItems.count)")
+                .font(.caption2)
+                .monospacedDigit()
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 4)
+        .padding(.vertical, 4)
+        .background(Color.secondary.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    private var emptySearchView: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .font(.largeTitle)
+                .foregroundStyle(.secondary)
+
+            Text("Введите слово для поиска")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity, minHeight: 88)
+    }
+
+    private var emptyResultsView: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .font(.largeTitle)
+                .foregroundStyle(.secondary)
+
+            Text("Ничего не найдено")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+
+            Text("Попробуйте изменить запрос")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity, minHeight: 88)
+    }
+
+    private func resultRow(item: QAItem) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(item.question)
+                .font(.callout)
+                .lineLimit(3)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text("\(item.answers.filter(\.is_correct).count) правильных из \(item.answers.count)")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 4)
+        .padding(.vertical, 6)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.secondary.opacity(0.14), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 }
 
